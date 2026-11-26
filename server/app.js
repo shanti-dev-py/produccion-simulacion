@@ -28,14 +28,18 @@ export function createApp({ machine, reportes, db, log }) {
   const app = express();
   app.use(express.json({ limit: '64kb' }));
 
+  // Express 4 no captura promesas rechazadas: sin esto, un fallo en una ruta
+  // asíncrona tumba el proceso en medio de una toma.
+  const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
   // Con el worker saturando la base, lo que toca datos se arrastra. Es real
   // para el endpoint del reporte y degradación explícita para el resto.
-  const baseSaturada = async (req, res, next) => {
+  const baseSaturada = asyncHandler(async (req, res, next) => {
     if (machine.snapshot().estado === 'caida') {
       await new Promise((resolve) => setTimeout(resolve, 700));
     }
     next();
-  };
+  });
 
   app.get('/api/health', (req, res) => {
     res.json({ ok: true, uptime: Math.round(process.uptime()) });
@@ -49,6 +53,7 @@ export function createApp({ machine, reportes, db, log }) {
       counts: db.counts(),
       logs: log.lines(since),
       seq: log.seq,
+      generacion: log.generacion,
     });
   });
 
@@ -69,32 +74,32 @@ export function createApp({ machine, reportes, db, log }) {
     res.json({ estado: machine.snapshot().estado, ...reportes.estado() });
   });
 
-  app.post('/api/reportes/cartesiano', async (req, res) => {
+  app.post('/api/reportes/cartesiano', asyncHandler(async (req, res) => {
     res.json(await machine.apply('sebas'));
-  });
+  }));
 
-  app.post('/api/reportes/join', async (req, res) => {
+  app.post('/api/reportes/join', asyncHandler(async (req, res) => {
     res.json(await machine.apply('join'));
-  });
+  }));
 
-  app.post('/api/consulta', async (req, res) => {
+  app.post('/api/consulta', asyncHandler(async (req, res) => {
     const sql = String(req.body?.sql ?? '');
     const plan = estimar(sql, db.counts());
     const resultado = await ejecutar(sql, { file: db.path });
     res.json({ sql, plan, ...resultado });
-  });
+  }));
 
-  app.delete('/api/usuarios', async (req, res) => {
+  app.delete('/api/usuarios', asyncHandler(async (req, res) => {
     res.json(await machine.apply('delete'));
-  });
+  }));
 
-  app.post('/api/incidente/reiniciar', async (req, res) => {
+  app.post('/api/incidente/reiniciar', asyncHandler(async (req, res) => {
     res.json(await machine.apply('reiniciar'));
-  });
+  }));
 
-  app.post('/api/incidente/reset', async (req, res) => {
+  app.post('/api/incidente/reset', asyncHandler(async (req, res) => {
     res.json(await machine.apply('reset'));
-  });
+  }));
 
   app.use('/docs-assets', express.static(getAbsoluteFSPath()));
   app.get('/docs', (req, res) => res.type('html').send(SWAGGER_HTML));
@@ -106,6 +111,12 @@ export function createApp({ machine, reportes, db, log }) {
     res.sendFile(path.join(DIST, 'index.html'), (error) => {
       if (error) res.status(404).send('Panel sin compilar. Ejecutá: npm run build');
     });
+  });
+
+  app.use((error, req, res, next) => {
+    log.error(`error en ${req.method} ${req.path} · ${error.message}`);
+    if (res.headersSent) return next(error);
+    res.status(500).json({ error: 'error interno' });
   });
 
   return app;

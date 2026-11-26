@@ -55,5 +55,5 @@ las líneas `WARN` y `ERROR` ya están en pantalla.
 - No apretar «Restaurar semilla» en medio de una toma: vuelve todo a verde de
   golpe y arruina la Escena 2.
 - No recargar el navegador con la caída en curso: el panel vuelve a pedir el
-  estado y aparece rojo igual, pero el log arranca vacío.
+  estado y aparece rojo igual, pero el log trae todo el historial de la sesión.
 - No cerrar la terminal: ahí vive el proceso.

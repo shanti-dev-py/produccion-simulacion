@@ -102,3 +102,56 @@ test('el reset restaura los datos y el estado', async () => {
     assert.equal(listado.total, 5000);
   });
 });
+
+test('una página fuera de rango responde vacía, no 500', async () => {
+  await withServer(async ({ base }) => {
+    const res = await fetch(`${base}/api/usuarios?page=999`);
+    const body = await res.json();
+
+    assert.equal(res.status, 200);
+    assert.deepEqual(body.rows, []);
+    assert.equal(body.total, 5000);
+  });
+});
+
+test('con el sistema vacío ningún endpoint se rompe', async () => {
+  await withServer(async ({ base }) => {
+    await fetch(`${base}/api/usuarios`, { method: 'DELETE' });
+
+    for (const ruta of ['/api/estado', '/api/pedidos?page=1&limit=5', '/api/reportes']) {
+      const res = await fetch(`${base}${ruta}`);
+      assert.equal(res.status, 200, ruta);
+    }
+
+    const join = await fetch(`${base}/api/reportes/join`, { method: 'POST' });
+    assert.equal(join.status, 200);
+
+    const consulta = await fetch(`${base}/api/consulta`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sql: 'SELECT COUNT(*) AS c FROM usuarios' }),
+    });
+    const resultado = await consulta.json();
+    assert.equal(resultado.ok, true);
+    assert.equal(resultado.rows[0].c, 0);
+  });
+});
+
+test('el reset vacía el log que ve la web', async () => {
+  await withServer(async ({ base }) => {
+    await fetch(`${base}/api/reportes/cartesiano`, { method: 'POST' });
+    const antes = await (await fetch(`${base}/api/estado?since=0`)).json();
+    assert.ok(antes.logs.some((linea) => linea.level === 'warn'));
+
+    await fetch(`${base}/api/incidente/reset`, { method: 'POST' });
+    const despues = await (await fetch(`${base}/api/estado?since=0`)).json();
+
+    assert.ok(despues.generacion > antes.generacion);
+    assert.deepEqual(
+      despues.logs.filter((linea) => ['warn', 'error', 'fatal'].includes(linea.level)),
+      [],
+    );
+    assert.equal(despues.estado, 'operativa');
+    assert.equal(despues.filas, 400_000);
+  });
+});

@@ -3,7 +3,7 @@ import { numero, hora } from '../formato.js';
 const TONO = {
   operativa: 'senal',
   caida: 'corte',
-  vacia: 'alarma',
+  vacia: 'corte',
 };
 
 function Metrica({ rotulo, valor, detalle, tono = 'neutro' }) {

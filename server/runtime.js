@@ -13,7 +13,10 @@ export function createRuntime({ db, log }) {
       reiniciar: () => undefined,
       reset: async () => {
         await reportes.matar();
-        db.reset();
+        const counts = db.reset();
+        log.clear();
+        reportes.fijar(counts.pedidos);
+        return { filas: counts.pedidos };
       },
     },
   });

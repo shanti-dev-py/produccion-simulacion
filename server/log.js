@@ -28,6 +28,7 @@ export function createLog({
 } = {}) {
   const buffer = [];
   let seq = 0;
+  let generacion = 1;
   const useColor = Boolean(process.stdout.isTTY || process.env.FORCE_COLOR);
 
   function paint(level, text) {
@@ -61,8 +62,15 @@ export function createLog({
     error: (msg, extra) => write('error', msg, extra),
     fatal: (msg, extra) => write('fatal', msg, extra),
     lines: (since = 0) => buffer.filter((line) => line.seq > since),
+    clear() {
+      buffer.length = 0;
+      generacion += 1;
+    },
     get seq() {
       return seq;
+    },
+    get generacion() {
+      return generacion;
     },
   };
 }

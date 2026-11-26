@@ -16,13 +16,18 @@ const AFTER = {
   reset: 'operativa',
 };
 
+// Solo estos eventos traen su propio conteo de filas desde la base.
+const CON_FILAS_REALES = new Set(['join', 'delete', 'reset']);
+
 export function createMachine({ log, deps = {} } = {}) {
   let current = 'operativa';
   let desde = new Date().toISOString();
+  let filas = ESTADOS.operativa.filas;
+  let cola = Promise.resolve();
   const listeners = new Set();
 
   function snapshot() {
-    return { estado: current, desde, ...ESTADOS[current] };
+    return { estado: current, desde, ...ESTADOS[current], filas };
   }
 
   function narrate(event) {
@@ -35,7 +40,7 @@ export function createMachine({ log, deps = {} } = {}) {
     }
     if (event === 'join') {
       log.info('JOIN aplicado · ON usuarios.id = pedidos.usuario_id');
-      log.ok(`producción operativa · ${fmt(400_000)} filas · disponibilidad 99.99 %`);
+      log.ok(`producción operativa · ${fmt(snapshot().filas)} filas · disponibilidad 99.99 %`);
     }
     if (event === 'delete') {
       log.fatal('DELETE sin WHERE · usuarios = ∅');
@@ -48,21 +53,39 @@ export function createMachine({ log, deps = {} } = {}) {
     }
   }
 
-  async function apply(event) {
-    if (!EVENTS.includes(event)) throw new Error(`evento desconocido: ${event}`);
-
-    if (deps[event]) await deps[event]();
+  async function ejecutar(event) {
+    const resultado = deps[event] ? await deps[event]() : undefined;
 
     const next = AFTER[event];
     if (next) {
       current = next;
       desde = new Date().toISOString();
+      filas = ESTADOS[next].filas;
+    }
+
+    if (CON_FILAS_REALES.has(event) && Number.isFinite(resultado?.filas)) {
+      filas = resultado.filas;
     }
 
     narrate(event);
+
     const state = snapshot();
     for (const listener of listeners) listener(state);
     return state;
+  }
+
+  // Un evento a la vez: un reset no puede cruzarse con un clic en «Ejecutar
+  // reporte» que llegue en el mismo instante.
+  function apply(event) {
+    if (!EVENTS.includes(event)) {
+      return Promise.reject(new Error(`evento desconocido: ${event}`));
+    }
+    const turno = cola.then(() => ejecutar(event));
+    cola = turno.then(
+      () => undefined,
+      () => undefined,
+    );
+    return turno;
   }
 
   return {

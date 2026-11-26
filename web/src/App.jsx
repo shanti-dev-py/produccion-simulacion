@@ -50,9 +50,15 @@ export default function App() {
   const [latencia, setLatencia] = useState(null);
   const [sinRespuesta, setSinRespuesta] = useState(false);
   const [ocupado, setOcupado] = useState(null);
-  const [guia, setGuia] = useState(() => window.localStorage.getItem('aurora.guia') !== '0');
+  const [guia, setGuia] = useState(() => {
+    const url = new URLSearchParams(window.location.search).get('guia');
+    if (url === '0') return false;
+    if (url === '1') return true;
+    return window.localStorage.getItem('aurora.guia') !== '0';
+  });
 
   const seq = useRef(0);
+  const generacion = useRef(null);
   const fallos = useRef(0);
   const director = new URLSearchParams(window.location.search).get('director') === '1';
 
@@ -68,11 +74,19 @@ export default function App() {
         fallos.current = 0;
         setSinRespuesta(false);
         setLatencia(Math.round(performance.now() - started));
-        seq.current = data.seq;
-        setEstado(data);
-        if (data.logs.length) {
-          setLogs((prev) => [...prev, ...data.logs].slice(-400));
+
+        const estreno = generacion.current !== data.generacion;
+        generacion.current = data.generacion;
+
+        if (estreno || data.seq < seq.current) {
+          seq.current = data.seq;
+          setLogs(data.logs);
+        } else {
+          seq.current = data.seq;
+          if (data.logs.length) setLogs((prev) => [...prev, ...data.logs].slice(-400));
         }
+
+        setEstado(data);
       } catch {
         if (!vivo) return;
         fallos.current += 1;

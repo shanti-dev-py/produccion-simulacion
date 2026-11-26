@@ -51,6 +51,13 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/LogLine'
+                  reporte:
+                    type: object
+                    properties:
+                      activo: { type: boolean }
+                      filas: { type: integer }
+                      ms: { type: integer }
+                  generacion: { type: integer }
                   seq: { type: integer }
   /api/logs:
     get:

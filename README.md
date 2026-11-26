@@ -48,14 +48,14 @@ sola en el primer arranque si falta.
 |---|---|
 | Estado | semáforo, disponibilidad, error, latencia, filas y acciones de incidente |
 | Usuarios | 5.000 usuarios paginados |
-| Pedidos | 400.000 pedidos, filtrables por usuario |
+| Pedidos | 400.000 pedidos paginados (la API filtra por `usuario_id`) |
 | Reportes | la consulta de Sebas contra la consulta correcta |
 | Consulta SQL | editor libre con plan estimado y resultado |
 
 Abajo, siempre visible, la franja **SERVER LOG**: es el mismo flujo que imprime
 la terminal, línea por línea.
 
-`/docs` sirve Swagger UI con las trece rutas del contrato.
+`/docs` sirve Swagger UI con las doce operaciones del contrato.
 
 ## Guion de la caída
 

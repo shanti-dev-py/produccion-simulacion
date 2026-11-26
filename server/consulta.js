@@ -2,11 +2,12 @@ import { fork } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT = fileURLToPath(new URL('./consulta-worker.js', import.meta.url));
-const PROHIBIDAS = /^\s*(pragma|attach|detach|vacuum)\b/i;
+const PROHIBIDAS = /^\s*(pragma|attach|detach|vacuum|create|drop|alter|truncate|reindex)\b/i;
 
 function unaSolaSentencia(sql) {
   const sinLiterales = sql
     .replace(/'(?:[^']|'')*'/g, "''")
+    .replace(/"(?:[^"]|"")*"/g, '""')
     .replace(/--[^\n]*/g, '')
     .replace(/\/\*[\s\S]*?\*\//g, '');
   return !/;\s*\S/.test(sinLiterales);
@@ -29,7 +30,10 @@ export async function ejecutar(sql, { file, timeoutMs = 4000, maxRows = 200 } = 
     const started = Date.now();
     // Un proceso, no un worker: una consulta sin fin bloquea el hilo dentro de
     // una función nativa y `terminate()` no puede interrumpirla. SIGKILL sí.
-    const child = fork(SCRIPT, [], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+    const child = fork(SCRIPT, [], {
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      execArgv: [],
+    });
 
     let settled = false;
 

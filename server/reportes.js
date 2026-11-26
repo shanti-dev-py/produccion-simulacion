@@ -27,12 +27,17 @@ export function createReportes({ db, log }) {
       }
       if (message.type === 'fin') {
         last = { filas: message.filas, ms: message.ms, activo: false };
+        worker = null;
       }
     });
 
     worker.on('error', (error) => {
       log.error(`reporte abortado · ${error.message}`);
       last = { ...last, activo: false };
+      worker = null;
+    });
+
+    worker.on('exit', () => {
       worker = null;
     });
 
@@ -62,8 +67,12 @@ export function createReportes({ db, log }) {
       await worker.terminate();
       worker = null;
     }
-    last = { filas: 0, ms: 0, activo: false };
+    last = { ...last, activo: false };
   }
 
-  return { cartesiano, join, matar, estado: () => ({ ...last }) };
+  function fijar(filas) {
+    last = { filas, ms: last.ms, activo: false };
+  }
+
+  return { cartesiano, join, matar, fijar, estado: () => ({ ...last }) };
 }

@@ -11,14 +11,18 @@ function clampInt(value, fallback, max) {
   return Math.min(parsed, max);
 }
 
-export function openDb({ file, seed }) {
+export function openDb({ file, seed, resetOnStart = true }) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
 
+  // Copia a un temporal y renombra: si el proceso muere a mitad de copia, el
+  // archivo de trabajo nunca queda a medias.
   function restoreFromSeed() {
-    for (const leftover of [file, `${file}-wal`, `${file}-shm`]) {
+    const temporal = `${file}.tmp`;
+    fs.copyFileSync(seed, temporal);
+    for (const leftover of [`${file}-wal`, `${file}-shm`]) {
       if (fs.existsSync(leftover)) fs.rmSync(leftover);
     }
-    fs.copyFileSync(seed, file);
+    fs.renameSync(temporal, file);
   }
 
   function connect(handle) {
@@ -44,7 +48,7 @@ export function openDb({ file, seed }) {
     };
   }
 
-  if (!fs.existsSync(file)) restoreFromSeed();
+  if (resetOnStart || !fs.existsSync(file)) restoreFromSeed();
 
   let db = new Database(file);
   let stmts = connect(db);

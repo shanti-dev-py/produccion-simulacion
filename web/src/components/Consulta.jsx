@@ -28,7 +28,7 @@ export function Consulta({ guia }) {
   function onKeyDown(event) {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
-      ejecutar();
+      if (!corriendo) ejecutar();
     }
   }
 

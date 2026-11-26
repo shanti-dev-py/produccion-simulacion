@@ -29,9 +29,17 @@ const app = createApp({ ...runtime, db, log });
 // en que cambia el estado, sin que el servidor tenga que esperar por él.
 const GUARDIA = path.join(HERE, '..', 'scripts', 'guardia.mjs');
 
-function avisarAlEscritorio() {
+function avisarAlEscritorio(estado) {
   try {
-    const hijo = spawn(process.execPath, [GUARDIA], { detached: true, stdio: 'ignore' });
+    const hijo = spawn(process.execPath, [GUARDIA], {
+      detached: true,
+      stdio: 'ignore',
+      env: {
+        ...process.env,
+        AURORA_URL: `http://localhost:${PORT}`,
+        AURORA_GUARDIA_ESTADO: JSON.stringify(estado),
+      },
+    });
     hijo.on('error', () => {});
     hijo.unref();
   } catch {
@@ -40,7 +48,17 @@ function avisarAlEscritorio() {
 }
 
 runtime.machine.on(avisarAlEscritorio);
-avisarAlEscritorio();
+avisarAlEscritorio(runtime.machine.snapshot());
+
+// Una promesa rechazada en una ruta no puede apagar el servidor en medio de
+// una toma: se registra y se sigue.
+process.on('unhandledRejection', (motivo) => {
+  log.error(`promesa sin manejar · ${motivo?.message ?? motivo}`);
+});
+
+process.on('uncaughtException', (error) => {
+  log.error(`excepción no capturada · ${error.message}`);
+});
 
 const COMMANDS = {
   estado: () => {
