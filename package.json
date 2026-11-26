@@ -9,7 +9,8 @@
     "build": "vite build --config web/vite.config.js",
     "start": "node server/index.js",
     "dev": "npm run build && npm start",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "guardia": "node scripts/guardia.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",

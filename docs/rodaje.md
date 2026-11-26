@@ -23,6 +23,9 @@ npm run dev
 2. Confirmar que la franja de log no tenga líneas rojas: si quedan, es que el
    reset no terminó.
 3. Poner la sección `Estado` con la tecla `1`.
+4. Notificaciones del escritorio activas (no «No molestar»): el aviso de
+   «¡Se cayó producción!» aparece en pantalla en el instante del click y sirve
+   de plano.
 
 ## Escena por escena
 

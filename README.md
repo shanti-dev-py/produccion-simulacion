@@ -70,6 +70,35 @@ la terminal, línea por línea.
 «Reiniciar» existe para el chiste de Camilo: responde, escribe en el log y no
 cambia absolutamente nada.
 
+## Avisos de producción
+
+`scripts/guardia.mjs` compara el estado actual con el último que vio y avisa
+por notificación de escritorio cuando cambia:
+
+| Cambio | Aviso |
+|---|---|
+| → `caida` | **¡Se cayó producción!** · filas, disponibilidad y error, urgencia crítica |
+| → `operativa` | **Producción operativa** · filas recuperadas |
+| → `vacia` | **Usuarios borrados** · conjunto vacío |
+| sin respuesta | **Producción sin respuesta** · la API no contesta |
+
+Se dispara de dos formas:
+
+1. **Al instante**: el servidor ejecuta el guardián en cada transición de la
+   máquina de estados (`server/index.js`).
+2. **Cada minuto**: la automatización de Orca *Guardia de producción* lo corre
+   como vigilante, para detectar también el caso en que el servidor se cayó.
+
+El historial queda en `/tmp/aurora-guardia.log`. Probarlo a mano:
+
+```bash
+npm run guardia     # sin cambios: no dice nada
+```
+
+La notificación usa `gdbus` contra `org.freedesktop.Notifications` porque en
+este equipo `notify-send` está roto (`symbol lookup error`); si `gdbus` falla,
+cae a `notify-send`.
+
 ## Manejo desde la terminal
 
 El servidor abre un REPL (`aurora>`) cuando corre en una terminal interactiva:

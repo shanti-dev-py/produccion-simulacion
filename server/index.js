@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { buildSeed } from './seed.js';
 import { openDb } from './db.js';
@@ -23,6 +24,23 @@ const log = createLog();
 const db = openDb({ file: DATA, seed: SEED });
 const runtime = createRuntime({ db, log });
 const app = createApp({ ...runtime, db, log });
+
+// El guardián corre en su propio proceso: avisa al escritorio en el instante
+// en que cambia el estado, sin que el servidor tenga que esperar por él.
+const GUARDIA = path.join(HERE, '..', 'scripts', 'guardia.mjs');
+
+function avisarAlEscritorio() {
+  try {
+    const hijo = spawn(process.execPath, [GUARDIA], { detached: true, stdio: 'ignore' });
+    hijo.on('error', () => {});
+    hijo.unref();
+  } catch {
+    // si el aviso falla, producción sigue igual: no es parte del sistema
+  }
+}
+
+runtime.machine.on(avisarAlEscritorio);
+avisarAlEscritorio();
 
 const COMMANDS = {
   estado: () => {
