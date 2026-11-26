@@ -9,7 +9,7 @@ function columnasDe(filas) {
   return Object.keys(filas[0]);
 }
 
-export function Consulta() {
+export function Consulta({ guia }) {
   const [sql, setSql] = useState(SQL_INICIAL);
   const [resultado, setResultado] = useState(null);
   const [corriendo, setCorriendo] = useState(false);
@@ -72,7 +72,7 @@ export function Consulta() {
                   : numero(resultado.plan.filas)}
               </p>
               <p className="plan__motivo">{resultado.plan?.motivo}</p>
-              {resultado.plan?.producto && (
+              {guia && resultado.plan?.producto && (
                 <p className="aviso aviso--error">
                   Producto cartesiano: cada usuario se cruza con cada pedido.
                 </p>

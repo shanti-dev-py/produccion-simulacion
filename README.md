@@ -115,8 +115,20 @@ clear      limpia la pantalla
 ```
 
 También se puede manejar con la URL: `/#consulta`, `/#reportes`, etc. Y con
-`?director=1` se activan los atajos `1`–`5` para cambiar de sección y `R` para
-resetear entre tomas.
+`?director=1` se activan los atajos `1`–`5` para cambiar de sección, `R` para
+resetear entre tomas y `G` para el modo guía.
+
+### Modo guía
+
+El interruptor **modo guía** (abajo a la izquierda) decide si el panel explica
+lo que muestra o se comporta como un producto y ya:
+
+- **Encendido** (por defecto): aparecen las notas didácticas — el chiste de
+  Camilo, qué significa el producto cartesiano, la relación entre tablas.
+  Sirve para la exposición en clase.
+- **Apagado**: solo lo que un sistema real mostraría. Es el modo de grabación.
+
+La elección se guarda en el navegador (`localStorage`, clave `aurora.guia`).
 
 ## Cómo se simula
 

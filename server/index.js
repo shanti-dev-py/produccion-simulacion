@@ -108,7 +108,7 @@ function startRepl() {
 const server = app.listen(PORT, () => {
   banner();
   log.ok(`aurora escuchando en el puerto ${PORT}`);
-  log.info('escribí "ayuda" para manejar el sistema desde acá');
+  log.info('consola de operaciones lista');
   startRepl();
 });
 

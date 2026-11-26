@@ -16,7 +16,7 @@ function Metrica({ rotulo, valor, detalle, tono = 'neutro' }) {
   );
 }
 
-export function Estado({ estado, latencia, sinRespuesta, ocupado, disparar, irA }) {
+export function Estado({ estado, latencia, sinRespuesta, ocupado, disparar, irA, guia }) {
   if (!estado) return <p className="vacio">conectando con aurora…</p>;
 
   const caida = estado.estado === 'caida';
@@ -41,11 +41,13 @@ export function Estado({ estado, latencia, sinRespuesta, ocupado, disparar, irA 
         <div className="instrumental__heroe">
           <p className="rotulo">filas del último reporte</p>
           <p className={`cifra cifra--${TONO[estado.estado]}`}>{numero(estado.filas)}</p>
-          <p className="instrumental__nota">
-            {caida && 'producto cartesiano · sin ON ni WHERE'}
-            {vacia && 'conjunto vacío · usuarios = ∅'}
-            {!caida && !vacia && 'cuatrocientos mil pedidos con su usuario'}
-          </p>
+          {guia && (
+            <p className="instrumental__nota">
+              {caida && 'producto cartesiano · sin ON ni WHERE'}
+              {vacia && 'conjunto vacío · usuarios = ∅'}
+              {!caida && !vacia && 'cuatrocientos mil pedidos con su usuario'}
+            </p>
+          )}
         </div>
 
         <div className="instrumental__metricas">
@@ -155,9 +157,11 @@ export function Estado({ estado, latencia, sinRespuesta, ocupado, disparar, irA 
             Restaurar semilla
           </button>
         </div>
-        <p className="acciones__nota">
-          «Reiniciar» no hace nada, y lo dice en el log. Es el chiste de Camilo.
-        </p>
+        {guia && (
+          <p className="acciones__nota">
+            «Reiniciar» no hace nada, y lo dice en el log. Es el chiste de Camilo.
+          </p>
+        )}
       </div>
     </section>
   );

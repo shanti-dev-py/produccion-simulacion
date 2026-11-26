@@ -9,7 +9,7 @@ function Dato({ rotulo, valor, tono }) {
   );
 }
 
-export function Reportes({ estado, ocupado, disparar }) {
+export function Reportes({ estado, ocupado, disparar, guia }) {
   if (!estado) return <p className="vacio">conectando con aurora…</p>;
 
   const activo = Boolean(estado.reporte?.activo);
@@ -27,7 +27,7 @@ export function Reportes({ estado, ocupado, disparar }) {
         <article className={`panel panel--reporte${activo ? ' panel--vivo' : ''}`}>
           <header className="panel__cabecera">
             <p className="rotulo">reporte de sebas</p>
-            <span className="etiqueta etiqueta--alarma">sin filtro</span>
+            {guia && <span className="etiqueta etiqueta--alarma">sin filtro</span>}
           </header>
 
           <code className="sql sql--bloque">SELECT * FROM usuarios, pedidos;</code>
@@ -52,16 +52,16 @@ export function Reportes({ estado, ocupado, disparar }) {
         <article className="panel panel--reporte">
           <header className="panel__cabecera">
             <p className="rotulo">reporte corregido</p>
-            <span className="etiqueta etiqueta--senal">con JOIN</span>
+            {guia && <span className="etiqueta etiqueta--senal">con JOIN</span>}
           </header>
 
           <code className="sql sql--bloque">
             SELECT u.nombre, p.total{'\n'}FROM usuarios u{'\n'}JOIN pedidos p ON u.id = p.usuario_id;
           </code>
 
-          <dl className="datos">
+          <dl className={`datos${guia ? '' : ' datos--tres'}`}>
             <Dato rotulo="filas" valor={numero(400_000)} tono="senal" />
-            <Dato rotulo="relación" valor="un usuario por pedido" />
+            {guia && <Dato rotulo="relación" valor="un usuario por pedido" />}
             <Dato rotulo="tiempo típico" valor="≈ 200 ms" />
             <Dato rotulo="estado" valor={estado.estado === 'operativa' ? 'aplicado' : 'pendiente'} />
           </dl>
@@ -77,10 +77,12 @@ export function Reportes({ estado, ocupado, disparar }) {
         </article>
       </div>
 
-      <p className="nota-pie">
-        Dos mil millones de filas son cinco mil usuarios multiplicados por cuatrocientos mil pedidos.
-        El JOIN es la función que asigna a cada pedido un único usuario.
-      </p>
+      {guia && (
+        <p className="nota-pie">
+          Dos mil millones de filas son cinco mil usuarios multiplicados por cuatrocientos mil pedidos.
+          El JOIN es la función que asigna a cada pedido un único usuario.
+        </p>
+      )}
     </section>
   );
 }

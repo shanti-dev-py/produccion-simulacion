@@ -50,6 +50,7 @@ export default function App() {
   const [latencia, setLatencia] = useState(null);
   const [sinRespuesta, setSinRespuesta] = useState(false);
   const [ocupado, setOcupado] = useState(null);
+  const [guia, setGuia] = useState(() => window.localStorage.getItem('aurora.guia') !== '0');
 
   const seq = useRef(0);
   const fallos = useRef(0);
@@ -88,6 +89,14 @@ export default function App() {
     };
   }, []);
 
+  function alternarGuia() {
+    setGuia((valor) => {
+      const siguiente = !valor;
+      window.localStorage.setItem('aurora.guia', siguiente ? '1' : '0');
+      return siguiente;
+    });
+  }
+
   function ir(id) {
     setSeccion(id);
     if (window.location.hash !== `#${id}`) window.location.hash = id;
@@ -118,6 +127,7 @@ export default function App() {
       const destino = SECCIONES.find((item) => item.numero === event.key);
       if (destino) ir(destino.id);
       if (event.key.toLowerCase() === 'r') disparar('reset');
+      if (event.key.toLowerCase() === 'g') alternarGuia();
     };
 
     window.addEventListener('keydown', onKey);
@@ -152,6 +162,17 @@ export default function App() {
         </nav>
 
         <div className="sidebar__pie">
+          <button
+            type="button"
+            className={`guia${guia ? ' guia--activa' : ''}`}
+            onClick={alternarGuia}
+            aria-pressed={guia}
+            title="Muestra u oculta las explicaciones de cada pantalla"
+          >
+            <span className="guia__pista" />
+            modo guía
+            <span className="guia__valor">{guia ? 'on' : 'off'}</span>
+          </button>
           <a href="/docs" target="_blank" rel="noreferrer" className="sidebar__enlace">
             API · Swagger
           </a>
@@ -183,6 +204,7 @@ export default function App() {
           ocupado={ocupado}
           disparar={disparar}
           irA={ir}
+          guia={guia}
         />
       </main>
 

@@ -26,6 +26,9 @@ npm run dev
 4. Notificaciones del escritorio activas (no «No molestar»): el aviso de
    «¡Se cayó producción!» aparece en pantalla en el instante del click y sirve
    de plano.
+5. **Modo guía apagado** (interruptor abajo a la izquierda, tecla `G` en modo
+   director). Encendido muestra las explicaciones del sketch; apagado deja solo
+   el producto. Para grabar, apagado.
 
 ## Escena por escena
 
