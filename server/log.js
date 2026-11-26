@@ -35,7 +35,8 @@ export function createLog({
   }
 
   function stamp(date) {
-    const text = date.toTimeString().slice(0, 8);
+    const dos = (valor) => String(valor).padStart(2, '0');
+    const text = `${dos(date.getHours())}:${dos(date.getMinutes())}:${dos(date.getSeconds())}`;
     return useColor ? `${ANSI.dim}${text}${ANSI.reset}` : text;
   }
 

@@ -1,0 +1,234 @@
+openapi: 3.0.3
+info:
+  title: Aurora API
+  version: 1.0.0
+  description: |
+    Panel de operaciones de Aurora. La consulta de reportes sin filtro satura la
+    base y degrada toda la API hasta que se aplica el JOIN.
+servers:
+  - url: /
+paths:
+  /api/health:
+    get:
+      summary: Latido del proceso
+      responses:
+        '200':
+          description: Vivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  uptime: { type: integer }
+  /api/estado:
+    get:
+      summary: Estado, métricas y últimas líneas de log
+      parameters:
+        - name: since
+          in: query
+          schema: { type: integer, default: 0 }
+          description: Devuelve solo las líneas de log posteriores a este seq
+      responses:
+        '200':
+          description: Foto del sistema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estado: { type: string, enum: [operativa, caida, vacia] }
+                  disponibilidad: { type: number, example: 99.99 }
+                  errorRate: { type: number, example: 0.01 }
+                  filas: { type: integer, example: 400000 }
+                  desde: { type: string, format: date-time }
+                  counts:
+                    type: object
+                    properties:
+                      usuarios: { type: integer }
+                      pedidos: { type: integer }
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogLine'
+                  seq: { type: integer }
+  /api/logs:
+    get:
+      summary: Líneas nuevas de log
+      parameters:
+        - name: since
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Líneas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seq: { type: integer }
+                  lines:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogLine'
+  /api/usuarios:
+    get:
+      summary: Listado paginado de usuarios
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 25, maximum: 200 }
+      responses:
+        '200':
+          description: Página
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pagina'
+    delete:
+      summary: Borra todos los usuarios y sus pedidos
+      responses:
+        '200':
+          description: Sistema vacío
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estado'
+  /api/pedidos:
+    get:
+      summary: Listado paginado de pedidos
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 25, maximum: 200 }
+        - name: usuario_id
+          in: query
+          schema: { type: integer }
+          description: Filtra los pedidos de un usuario
+      responses:
+        '200':
+          description: Página
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pagina'
+  /api/reportes:
+    get:
+      summary: Estado del reporte en curso
+      responses:
+        '200':
+          description: Progreso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estado: { type: string }
+                  activo: { type: boolean }
+                  filas: { type: integer }
+                  ms: { type: integer }
+  /api/reportes/cartesiano:
+    post:
+      summary: Ejecuta el reporte de Sebas (sin ON ni WHERE)
+      responses:
+        '200':
+          description: Producción caída
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estado'
+  /api/reportes/join:
+    post:
+      summary: Aplica el JOIN y recupera producción
+      responses:
+        '200':
+          description: Producción operativa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estado'
+  /api/consulta:
+    post:
+      summary: Estima y ejecuta SQL escrito a mano
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sql]
+              properties:
+                sql: { type: string, example: 'SELECT * FROM usuarios, pedidos' }
+      responses:
+        '200':
+          description: Plan y resultado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sql: { type: string }
+                  plan:
+                    type: object
+                    properties:
+                      tablas: { type: array, items: { type: string } }
+                      producto: { type: boolean }
+                      filas: { type: integer, nullable: true }
+                      motivo: { type: string }
+                  ok: { type: boolean }
+                  filas: { type: integer }
+                  ms: { type: integer }
+                  error: { type: string }
+                  rows: { type: array, items: { type: object } }
+  /api/incidente/reiniciar:
+    post:
+      summary: Reinicia, sin efecto (la broma de Camilo)
+      responses:
+        '200':
+          description: Estado sin cambios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estado'
+  /api/incidente/reset:
+    post:
+      summary: Restaura la base desde la semilla y vuelve a operativa
+      responses:
+        '200':
+          description: Sistema restaurado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estado'
+components:
+  schemas:
+    Estado:
+      type: object
+      properties:
+        estado: { type: string, enum: [operativa, caida, vacia] }
+        disponibilidad: { type: number }
+        errorRate: { type: number }
+        filas: { type: integer }
+        desde: { type: string, format: date-time }
+    Pagina:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        rows: { type: array, items: { type: object } }
+    LogLine:
+      type: object
+      properties:
+        seq: { type: integer }
+        ts: { type: string, format: date-time }
+        level: { type: string, enum: [info, ok, warn, error, fatal] }
+        msg: { type: string }
+        sql: { type: string }

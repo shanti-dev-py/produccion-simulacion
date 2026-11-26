@@ -5,11 +5,13 @@ import { formatNumber as fmt } from './log.js';
 export function createReportes({ db, log }) {
   let worker = null;
   let last = { filas: 0, ms: 0, activo: false };
+  let ultimoHito = 0;
 
   function cartesiano() {
     if (worker) return { ...last };
 
     last = { filas: 0, ms: 0, activo: true };
+    ultimoHito = 0;
     worker = new Worker(new URL('./reporte-worker.js', import.meta.url), {
       workerData: { file: db.path },
     });
@@ -17,7 +19,11 @@ export function createReportes({ db, log }) {
     worker.on('message', (message) => {
       if (message.type === 'progreso') {
         last = { filas: message.filas, ms: message.ms, activo: true };
-        log.warn(`${fmt(message.filas)} filas materializadas · ${message.ms} ms`);
+        const hito = message.filas === 187_442 || message.filas - ultimoHito >= 1_000_000;
+        if (hito) {
+          ultimoHito = message.filas;
+          log.warn(`${fmt(message.filas)} filas materializadas · ${message.ms} ms`);
+        }
       }
       if (message.type === 'fin') {
         last = { filas: message.filas, ms: message.ms, activo: false };
@@ -56,7 +62,7 @@ export function createReportes({ db, log }) {
       await worker.terminate();
       worker = null;
     }
-    last = { ...last, activo: false };
+    last = { filas: 0, ms: 0, activo: false };
   }
 
   return { cartesiano, join, matar, estado: () => ({ ...last }) };
